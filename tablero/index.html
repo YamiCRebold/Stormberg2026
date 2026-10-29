@@ -1,0 +1,628 @@
+<style>
+.sb { font-family: var(--font-anthropic-sans); color: var(--color-fg); display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
+.sb-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+.sb-take { margin: var(--cds-gap-xs) 0 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-body); max-width: 70ch; }
+.sb-take b { color: var(--color-fg); font-weight: 600; }
+.sb-tabs { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); border-bottom: 1px solid var(--color-border-line); padding-bottom: var(--cds-gap-xs); }
+.sb-tab { font: inherit; font-size: var(--cds-font-size-body); background: none; border: 1px solid transparent; border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); color: var(--color-fg-muted); cursor: pointer; }
+.sb-tab:hover { color: var(--color-fg); border-color: var(--color-border-line); }
+.sb-tab[aria-selected="true"] { color: var(--color-fg); background: var(--color-panel); border-color: var(--color-border-line); font-weight: 600; }
+.sb-tab:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+.sb-pane { display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
+.sb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: var(--cds-gap-md); }
+.sb-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: var(--cds-gap-md); }
+.sb-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+.sb-card h2, .sb-card h3 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+.sb-note { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.sb-sec { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+.sb-tile .sb-lab { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.sb-tile .sb-big { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.sb-delta { font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.sb-good { color: var(--color-ok); } .sb-bad { color: var(--color-bad); } .sb-warn { color: var(--color-warn); }
+.sb-scroll { overflow: auto; max-height: 34rem; }
+.sb-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.sb-table th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: 600; color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.sb-table td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+.sb-table td.n, .sb-table th.n { text-align: right; white-space: nowrap; }
+.sb-table td.w { min-width: 14rem; }
+.sb-pill { display: inline-block; padding: 0 var(--cds-pad-xs); border-radius: var(--cds-radius); border: 1px solid var(--color-border-line); white-space: nowrap; font-size: var(--cds-font-size-caption); }
+.sb-pill.ok { color: var(--color-ok); } .sb-pill.bad { color: var(--color-bad); } .sb-pill.warn { color: var(--color-warn); }
+.sb-light { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: var(--cds-gap-md); }
+.sb-light .sb-card { border-top-width: 3px; }
+.sb-light .parar { border-top-color: var(--color-bad); } .sb-light .seguir { border-top-color: var(--color-ok); } .sb-light .empezar { border-top-color: var(--color-warn); }
+.sb-alerts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+.sb-alerts li { display: flex; gap: var(--cds-gap-sm); align-items: baseline; font-size: var(--cds-font-size-body); }
+.sb-filters { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; font-size: var(--cds-font-size-caption); }
+.sb-filters select, .sb-filters input { font: inherit; background: var(--color-bg); color: var(--color-fg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); }
+.sb-bar { display: inline-block; height: .5rem; border-radius: 4px; background: var(--cds-chart-muted); vertical-align: middle; margin-right: var(--cds-gap-xs); }
+.sb-chart { position: relative; min-height: 15rem; }
+.sb-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; }
+.sb-tip .t { color: var(--cds-text-secondary); }
+[data-dash-source-state=empty] { color: transparent; }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+.sb-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-height: 3rem; }
+.sb-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+.sb-chips { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); }
+.sb-chip { font: inherit; font-size: var(--cds-font-size-caption); background: var(--color-bg); color: var(--color-fg-muted); border: 1px solid var(--color-border-line); border-radius: 999px; padding: var(--cds-pad-xs) var(--cds-pad-sm); cursor: pointer; }
+.sb-chip[aria-pressed="true"] { color: var(--color-fg); border-color: var(--color-fg); font-weight: 600; }
+.sb-chip:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+.sb-find { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+.sb-find li { display: grid; grid-template-columns: 7.5rem 1fr; gap: var(--cds-gap-sm); align-items: baseline; font-size: var(--cds-font-size-body); }
+.sb-zblock { display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+.sb-url { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--cds-font-size-caption); word-break: break-all; color: var(--color-fg-muted); }
+.sb-zblock h3 { margin: 0; font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); }
+</style>
+
+<div class="sb">
+  <header class="sb-head">
+    <h1 id="titulo">Tablero Stormberg + Granite</h1>
+    <p class="sb-take" id="takeaway">Del 1 al 27 de octubre las 4 marcas vendieron <b class="dash-skeleton" data-source="total" data-row="0" data-field="ventas_oct">—</b> en tienda (<span class="dash-skeleton" data-source="total" data-row="0" data-field="var_ventas">—</span> vs. 1–27 sep) con <b class="dash-skeleton" data-source="total" data-row="0" data-field="inversion">—</b> en Meta y Google. Hay <b class="dash-skeleton" data-source="total" data-row="0" data-field="criticas">—</b> alertas críticas y <b class="dash-skeleton" data-source="total" data-row="0" data-field="propuestas">—</b> acciones propuestas esperando tu aprobación.</p>
+  </header>
+
+  <nav class="sb-tabs" role="tablist" id="tabs">
+    <button class="sb-tab" role="tab" data-tab="resumen" id="tab-resumen">Resumen</button>
+    <button class="sb-tab" role="tab" data-tab="Brooklyn Biltong" id="tab-brooklyn">Brooklyn Biltong</button>
+    <button class="sb-tab" role="tab" data-tab="Beg & Barker" id="tab-begbarker">Beg &amp; Barker</button>
+    <button class="sb-tab" role="tab" data-tab="Ayoba" id="tab-ayoba">Ayoba</button>
+    <button class="sb-tab" role="tab" data-tab="Granite" id="tab-granite">Granite</button>
+    <button class="sb-tab" role="tab" data-tab="acciones" id="tab-acciones">Bitácora de acciones</button>
+    <button class="sb-tab" role="tab" data-tab="verificacion" id="tab-verificacion">Verificación de fuentes</button>
+  </nav>
+
+  <!-- RESUMEN -->
+  <section class="sb-pane" id="pane-resumen">
+    <div class="sb-card">
+      <h2 id="h-resumen">Las 4 marcas, 1–27 de octubre</h2>
+      <p class="sb-note">Ventas de tienda frente a los mismos días de septiembre. Inversión y ROAS según Meta y Google (valor que reporta cada plataforma). MER = ventas de tienda ÷ inversión. Todo en USD; Granite Meta convertido de COP con TRM 3,306.</p>
+      <div class="sb-scroll">
+        <table class="sb-table" id="t-resumen" data-source="kpi" data-row-key="cliente">
+          <thead><tr>
+            <th data-field="cliente">Marca</th><th class="n" data-field="ventas_oct">Ventas 1–27 oct</th><th class="n" data-field="ventas_sep">Ventas 1–27 sep</th><th class="n" data-field="var_ventas">Var.</th><th class="n" data-field="pedidos_oct">Pedidos</th><th class="n" data-field="inv_meta">Meta</th><th class="n" data-field="inv_google">Google</th><th class="n" data-field="roas_plat">ROAS plataformas</th><th class="n" data-field="mer">MER</th><th class="n" data-field="criticas">Alertas críticas</th>
+          </tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sb-card">
+      <h2 id="h-chart">Ventas de tienda: octubre vs. septiembre</h2>
+      <p class="sb-note">1 al 27 de cada mes, todos los canales de venta.</p>
+      <div class="sb-chart" id="c-ventas" data-source="kpi"></div>
+    </div>
+    <div class="sb-card">
+      <h2 id="h-alertas-all">Alertas abiertas</h2>
+      <ul class="sb-alerts" id="l-alertas-all" data-source="alertas"></ul>
+    </div>
+  </section>
+
+  <!-- CLIENTE -->
+  <section class="sb-pane" id="pane-cliente" hidden>
+    <div class="sb-tiles" id="tiles">
+      <div class="sb-card sb-tile"><span class="sb-lab">Ventas tienda 1–27 oct</span><span class="sb-big dash-skeleton" data-source="kpi" data-field="ventas_oct">—</span><span class="sb-delta" data-source="kpi" data-field="var_ventas">—</span></div>
+      <div class="sb-card sb-tile"><span class="sb-lab">Pedidos</span><span class="sb-big dash-skeleton" data-source="kpi" data-field="pedidos_oct">—</span><span class="sb-delta" data-source="kpi" data-field="var_pedidos">—</span></div>
+      <div class="sb-card sb-tile"><span class="sb-lab">Inversión Meta + Google</span><span class="sb-big dash-skeleton" data-source="kpi" data-field="inversion">—</span><span class="sb-delta sb-note" data-source="kpi" data-field="detalle_inv">—</span></div>
+      <div class="sb-card sb-tile"><span class="sb-lab">ROAS plataformas</span><span class="sb-big dash-skeleton" data-source="kpi" data-field="roas_plat">—</span><span class="sb-delta sb-note">valor reportado ÷ inversión</span></div>
+      <div class="sb-card sb-tile"><span class="sb-lab">MER</span><span class="sb-big dash-skeleton" data-source="kpi" data-field="mer">—</span><span class="sb-delta sb-note">ventas de tienda ÷ inversión</span></div>
+    </div>
+
+    <div>
+      <h2 class="sb-sec" id="h-semaforo">Semáforo</h2>
+    </div>
+    <div class="sb-light" id="semaforo" data-source="semaforo"></div>
+
+    <div class="sb-card">
+      <h2 id="h-alertas">Alertas</h2>
+      <ul class="sb-alerts" id="l-alertas" data-source="alertas"></ul>
+    </div>
+
+
+    <div class="sb-card" id="zoom" hidden>
+      <h2 id="h-zoom">Zoom</h2>
+      <p class="sb-note">Análisis a fondo de cada frente, como lo conversamos. Elige uno.</p>
+      <div class="sb-chips" id="zoom-chips" role="group" aria-label="Zoom">
+        <button class="sb-chip" data-brand="Brooklyn Biltong" data-zoom="Fast Sale">Fast Sale</button>
+        <button class="sb-chip" data-brand="Brooklyn Biltong" data-zoom="Smile">Smile</button>
+        <button class="sb-chip" data-brand="Brooklyn Biltong" data-zoom="Nuevos clientes">Nuevos clientes</button>
+        <button class="sb-chip" data-brand="Brooklyn Biltong" data-zoom="UTMs Meta">UTMs de Meta</button>
+        <button class="sb-chip" data-brand="Brooklyn Biltong" data-zoom="Remarketing">Remarketing</button>
+        <button class="sb-chip" data-brand="Brooklyn Biltong" data-zoom="Google">Google</button>
+        <button class="sb-chip" data-brand="Brooklyn Biltong" data-zoom="Email y SMS">Email y SMS</button>
+        <button class="sb-chip" data-brand="Beg &amp; Barker" data-zoom="Fall Sale B&amp;B">Fall Sale 21–25 oct</button>
+        <button class="sb-chip" data-brand="Ayoba" data-zoom="Flash Sale Ayoba">Flash Sale 21–25 oct</button>
+      </div>
+      <div class="sb-tiles" id="zoom-tiles" data-source="zoom_kpi"></div>
+      <div class="sb-zblock"><h3>Lo que encontramos</h3><ul class="sb-find" id="zoom-find" data-source="zoom_hallazgos"></ul></div>
+
+
+      <div class="sb-zblock" data-z="Fall Sale B&amp;B">
+        <h3 id="h-pb-diario">Venta diaria de tienda, 1–27 de octubre</h3>
+        <p class="sb-note">Barras de color: días de la promo (21–25 oct). Fuente: WooCommerce, desde la hoja.</p>
+        <div class="sb-chart" id="c-pb" data-source="promo_diario"></div>
+      </div>
+      <div class="sb-zblock" data-z="Fall Sale B&amp;B">
+        <h3 id="h-pb-lineas">Resultado por línea de la promo</h3>
+        <div class="sb-scroll"><table class="sb-table" id="t-pb" data-source="promo_lineas" data-row-key="id">
+          <thead><tr><th data-field="linea">Línea</th><th data-field="medio">Medio</th><th class="n" data-field="inversion">Inversión</th><th class="n" data-field="alcance">Destinatarios / alcance</th><th class="n" data-field="pedidos">Pedidos</th><th class="n" data-field="ventas">Ventas</th><th class="n" data-field="eficiencia">Rendimiento</th><th data-field="nota">Medida</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="sb-zblock" data-z="Flash Sale Ayoba">
+        <h3 id="h-pa-diario">Venta diaria de tienda, 1–27 de octubre</h3>
+        <p class="sb-note">Barras de color: días de la promo (21–25 oct). Fuente: Shopify, desde la hoja.</p>
+        <div class="sb-chart" id="c-pa" data-source="promo_diario"></div>
+      </div>
+      <div class="sb-zblock" data-z="Flash Sale Ayoba">
+        <h3 id="h-pa-lineas">Resultado por línea de la promo</h3>
+        <div class="sb-scroll"><table class="sb-table" id="t-pa" data-source="promo_lineas" data-row-key="id">
+          <thead><tr><th data-field="linea">Línea</th><th data-field="medio">Medio</th><th class="n" data-field="inversion">Inversión</th><th class="n" data-field="alcance">Destinatarios / alcance</th><th class="n" data-field="pedidos">Pedidos</th><th class="n" data-field="ventas">Ventas</th><th class="n" data-field="eficiencia">Rendimiento</th><th data-field="nota">Medida</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="sb-zblock" data-z="Fast Sale">
+        <h3 id="h-fs-diario">Venta diaria de tienda, 1–27 de octubre</h3>
+        <p class="sb-note">Barras de color: días de la Fast Sale (15–18 oct). Fuente: Shopify, verificado con la API.</p>
+        <div class="sb-chart" id="c-fs" data-source="bk_diario"></div>
+      </div>
+      <div class="sb-zblock" data-z="Fast Sale">
+        <h3 id="h-fs-canales">Resultado por línea de la promo</h3>
+        <div class="sb-scroll"><table class="sb-table" id="t-fs-canales" data-source="fs_canales" data-row-key="id">
+          <thead><tr><th data-field="linea">Línea</th><th data-field="medio">Medio</th><th class="n" data-field="inversion">Inversión</th><th class="n" data-field="alcance">Destinatarios / alcance</th><th class="n" data-field="pedidos">Pedidos</th><th class="n" data-field="ventas">Ventas</th><th class="n" data-field="eficiencia">Rendimiento</th><th data-field="nota">Medida</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="sb-zblock" data-z="Fast Sale">
+        <h3 id="h-fs-ubic">Meta por ubicación, 14–18 de octubre</h3>
+        <p class="sb-note">Por qué el CTR fue bajo: las historias de IG casi no reciben clics.</p>
+        <div class="sb-scroll"><table class="sb-table" id="t-fs-ubic" data-source="fs_ubicaciones" data-row-key="id">
+          <thead><tr><th data-field="plataforma">Plataforma</th><th data-field="ubicacion">Ubicación</th><th class="n" data-field="inversion">Inversión</th><th class="n" data-field="impresiones">Impr.</th><th class="n" data-field="clics">Clics</th><th class="n" data-field="ctr">CTR</th><th class="n" data-field="cpc">CPC</th><th class="n" data-field="carritos">Carritos</th><th class="n" data-field="compras">Compras</th><th class="n" data-field="roas">ROAS</th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div class="sb-zblock" data-z="Smile">
+        <h3 id="h-smile">Miembros, canjes y pauta por semana</h3>
+        <p class="sb-note">La pauta de Smile en Meta empezó la semana del 5-oct. Semanas de lunes a domingo.</p>
+        <div class="sb-scroll"><table class="sb-table" id="t-smile" data-source="smile_semanal" data-row-key="semana">
+          <thead><tr><th data-field="semana">Semana</th><th class="n" data-field="pedidos_miembros">Pedidos de miembros</th><th class="n" data-field="pedidos_totales">Pedidos totales</th><th class="n" data-field="canjes">Canjes</th><th class="n" data-field="pauta_meta">Pauta Meta</th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div class="sb-zblock" data-z="Nuevos clientes">
+        <h3 id="h-nc">Anuncios de la campaña, 1–18 de octubre</h3>
+        <div class="sb-scroll"><table class="sb-table" id="t-nc" data-source="nc_anuncios" data-row-key="id">
+          <thead><tr><th data-field="anuncio">Anuncio</th><th data-field="estado">Estado</th><th class="n" data-field="inversion">Inversión</th><th class="n" data-field="clics">Clics</th><th class="n" data-field="ctr">CTR</th><th class="n" data-field="visitas">Visitas</th><th class="n" data-field="carritos">Carritos</th><th class="n" data-field="compras">Compras</th><th class="n" data-field="roas">ROAS</th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+
+      <div class="sb-zblock" data-z="UTMs Meta">
+        <h3 id="h-utm-camp">Qué mide cada campaña</h3>
+        <p class="sb-note">Compras que reporta Meta (1–18 oct) frente a pedidos de tienda que traen huella de esa campaña en el link.</p>
+        <div class="sb-scroll"><table class="sb-table" id="t-utm-camp" data-source="utm_campanas" data-row-key="id">
+          <thead><tr><th data-field="campana">Campaña</th><th data-field="error">Error en el link</th><th class="n" data-field="compras_meta">Compras Meta</th><th class="n" data-field="pedidos_con_huella">Pedidos con huella</th><th class="n" data-field="ventas_con_huella">Ventas con huella</th><th data-field="accion">Qué hacer</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="sb-zblock" data-z="UTMs Meta">
+        <h3 id="h-utm-ped">Pedidos de octubre con link de Meta</h3>
+        <p class="sb-note">Cada pedido con el link tal cual llegó a la tienda (sin el fbclid).</p>
+        <div class="sb-scroll"><table class="sb-table" id="t-utm-ped" data-source="utm_pedidos" data-row-key="id">
+          <thead><tr><th data-field="fecha">Fecha</th><th data-field="campana">Campaña</th><th data-field="anuncio">Anuncio</th><th class="n" data-field="valor">Pedido</th><th data-field="problema">Problema</th><th data-field="url">Link que llegó</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="sb-zblock" data-z="Remarketing">
+        <h3 id="h-rmkt">Conjuntos de remarketing y clientes, 1–21 de octubre</h3>
+        <div class="sb-scroll"><table class="sb-table" id="t-rmkt" data-source="funnel" data-row-key="id">
+          <thead><tr><th data-field="conjunto">Conjunto</th><th class="n" data-field="inversion">Inversión</th><th class="n" data-field="alcance">Alcance</th><th class="n" data-field="frecuencia">Frec.</th><th class="n" data-field="visitas">Visitas</th><th class="n" data-field="carritos">Carritos</th><th class="n" data-field="compras">Compras</th><th class="n" data-field="cpa">CPA</th><th class="n" data-field="roas">ROAS</th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div class="sb-zblock" data-z="Google">
+        <h3 id="h-zg">Campañas de Google, 1–27 de octubre</h3>
+        <div class="sb-scroll"><table class="sb-table" id="t-zg" data-source="campanas" data-row-key="id">
+          <thead><tr><th data-field="campana">Campaña</th><th class="n" data-field="inversion">Inversión</th><th class="n" data-field="clics">Clics</th><th class="n" data-field="cpc">CPC</th><th class="n" data-field="conversiones">Conv.</th><th class="n" data-field="cpa">CPA</th><th class="n" data-field="valor">Valor</th><th class="n" data-field="roas">ROAS</th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div class="sb-zblock" data-z="Email y SMS">
+        <h3 id="h-ze">Envíos de octubre por ingreso por destinatario</h3>
+        <div class="sb-scroll"><table class="sb-table" id="t-ze" data-source="email" data-row-key="id">
+          <thead><tr><th data-field="nombre">Envío</th><th class="n" data-field="destinatarios">Destin.</th><th class="n" data-field="clic">Clic</th><th class="n" data-field="pedidos">Pedidos</th><th class="n" data-field="ventas">Ventas</th><th class="n" data-field="ingreso_destinatario">$/destin.</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="sb-card">
+      <h2 id="h-campanas">Campañas por medio, 1–27 de octubre</h2>
+      <p class="sb-note">Meta verificado contra la API (excepto Granite, solo hoja). Google desde la hoja de datos. Conversiones y valor según cada plataforma.</p>
+      <div class="sb-scroll">
+        <table class="sb-table" id="t-campanas" data-source="campanas" data-row-key="id">
+          <thead><tr>
+            <th data-field="canal">Medio</th><th data-field="campana">Campaña</th><th data-field="estado">Estado</th><th class="n" data-field="inversion">Inversión</th><th class="n" data-field="impresiones">Impr.</th><th class="n" data-field="clics">Clics</th><th class="n" data-field="ctr">CTR</th><th class="n" data-field="cpc">CPC</th><th class="n" data-field="conversiones">Conv.</th><th class="n" data-field="cpa">CPA</th><th class="n" data-field="valor">Valor</th><th class="n" data-field="roas">ROAS</th><th data-field="verificacion">Cruce de fuentes</th>
+          </tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sb-card" id="card-funnel">
+      <h2 id="h-funnel">Funnel de Meta por conjunto, 1–21 de octubre</h2>
+      <p class="sb-note">De impresión a compra. Frecuencia sobre 4 indica audiencia agotada.</p>
+      <div class="sb-scroll">
+        <table class="sb-table" id="t-funnel" data-source="funnel" data-row-key="id">
+          <thead><tr>
+            <th data-field="conjunto">Conjunto</th><th class="n" data-field="inversion">Inversión</th><th class="n" data-field="alcance">Alcance</th><th class="n" data-field="frecuencia">Frec.</th><th class="n" data-field="clics">Clics</th><th class="n" data-field="visitas">Visitas</th><th class="n" data-field="carritos">Carritos</th><th class="n" data-field="checkouts">Checkouts</th><th class="n" data-field="compras">Compras</th><th class="n" data-field="cpa">CPA</th><th class="n" data-field="roas">ROAS</th>
+          </tr></thead><tbody></tbody>
+        </table>
+      </div>
+      <p class="sb-note" id="funnel-empty" hidden>Sin acceso directo a la cuenta de Meta de esta marca: el funnel por conjunto no está disponible.</p>
+    </div>
+
+    <div class="sb-grid">
+      <div class="sb-card">
+        <h2 id="h-tienda">Ventas por canal de venta</h2>
+        <p class="sb-note">Tienda, 1–27 de octubre vs. 1–27 de septiembre.</p>
+        <div class="sb-scroll">
+          <table class="sb-table" id="t-tienda" data-source="tienda" data-row-key="cliente,canal_venta">
+            <thead><tr><th data-field="canal_venta">Canal</th><th class="n" data-field="ventas_oct">Oct</th><th class="n" data-field="pedidos_oct">Pedidos</th><th class="n" data-field="ventas_sep">Sep</th><th class="n" data-source="tienda_var" data-field="variacion">Var.</th></tr></thead><tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sb-card">
+        <h2 id="h-email">Email y SMS de octubre</h2>
+        <p class="sb-note">Ventas atribuidas por Klaviyo. Ordenado por ventas.</p>
+        <div class="sb-scroll">
+          <table class="sb-table" id="t-email" data-source="email" data-row-key="id">
+            <thead><tr><th data-field="nombre">Envío</th><th data-field="tipo">Tipo</th><th class="n" data-field="destinatarios">Destin.</th><th class="n" data-field="clic">Clic</th><th class="n" data-field="pedidos">Pedidos</th><th class="n" data-field="ventas">Ventas</th><th class="n" data-field="ingreso_destinatario">$/destin.</th></tr></thead><tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-card">
+      <h2 id="h-acc-cliente">Acciones de esta marca</h2>
+      <p class="sb-note">Del plan de acción de la hoja y del análisis del 19 de octubre.</p>
+      <div class="sb-scroll">
+        <table class="sb-table" id="t-acc-cliente" data-source="acciones" data-row-key="id">
+          <thead><tr><th data-field="id">#</th><th data-field="bloque">Prioridad</th><th data-field="accion">Acción</th><th data-field="responsable">Responsable</th><th data-field="fecha_limite">Límite</th><th data-field="estado">Estado</th></tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACCIONES -->
+  <section class="sb-pane" id="pane-acciones" hidden>
+    <div class="sb-card">
+      <h2 id="h-acciones">Bitácora de acciones</h2>
+      <p class="sb-note">Ciclo: Propuesta → Aprobada (tú) → Asignada → Ejecutada → Verificada. Para aprobar o asignar, dímelo en el chat con el número; confirmo la ejecución con el historial de cada plataforma.</p>
+      <div class="sb-filters">
+        <label for="f-cliente">Marca</label>
+        <select id="f-cliente"><option value="">Todas</option><option>Brooklyn Biltong</option><option>Beg &amp; Barker</option><option>Ayoba</option><option>Granite</option></select>
+        <label for="f-estado">Estado</label>
+        <select id="f-estado"><option value="">Todos</option></select>
+        <label for="f-q">Buscar</label>
+        <input id="f-q" type="search" placeholder="Acción o responsable">
+      </div>
+      <div class="sb-scroll">
+        <table class="sb-table" id="t-acciones" data-source="acciones" data-row-key="id">
+          <thead><tr><th data-field="id">#</th><th data-field="cliente">Marca</th><th data-field="origen">Origen</th><th data-field="bloque">Prioridad</th><th data-field="accion">Acción</th><th data-field="motivo">Por qué</th><th data-field="responsable">Responsable</th><th data-field="fecha_limite">Límite</th><th data-field="estado">Estado</th><th data-field="verificado">Verificado con</th></tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- VERIFICACION -->
+  <section class="sb-pane" id="pane-verificacion" hidden>
+    <div class="sb-card">
+      <h2 id="h-verif">Cruce de fuentes</h2>
+      <p class="sb-note">Conexiones directas (Meta, Klaviyo, Shopify) contra las hojas de datos de cada marca.</p>
+      <div class="sb-scroll">
+        <table class="sb-table" id="t-verif" data-source="verificacion" data-row-key="id">
+          <thead><tr><th data-field="cliente">Marca</th><th data-field="chequeo">Chequeo</th><th data-field="resultado">Resultado</th><th data-field="detalle">Detalle</th></tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sb-card">
+      <h2 id="h-frescura">Hasta dónde llegan los datos</h2>
+      <p class="sb-note">Último día completo por fuente en cada hoja.</p>
+      <div class="sb-scroll">
+        <table class="sb-table" id="t-frescura" data-source="frescura" data-row-key="cliente">
+          <thead><tr><th data-field="cliente">Marca</th><th data-field="google_hasta">Google</th><th data-field="meta_hasta">Meta</th><th data-field="tienda_hasta">Tienda</th><th data-field="ultima_actualizacion_hoja">Última actualización de la hoja</th></tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+dash.calc('kpi', {
+  title: 'KPIs por marca',
+  description: 'Suma ventas de tienda, inversión y valor de plataformas, y cuenta alertas críticas por marca.',
+  inputs: ['campanas', 'tienda', 'alertas'],
+  fn: (campanas, tienda, alertas) => ['Brooklyn Biltong', 'Beg & Barker', 'Ayoba', 'Granite'].map(c => {
+    const t = tienda.filter(r => r.cliente === c), k = campanas.filter(r => r.cliente === c);
+    const s = (a, f) => a.reduce((x, r) => x + (Number(r[f]) || 0), 0);
+    const vo = s(t, 'ventas_oct'), vs = s(t, 'ventas_sep'), po = s(t, 'pedidos_oct'), ps = s(t, 'pedidos_sep');
+    const im = s(k.filter(r => r.canal === 'Meta'), 'inversion'), ig = s(k.filter(r => r.canal === 'Google'), 'inversion'), val = s(k, 'valor');
+    return { cliente: c, ventas_oct: vo, ventas_sep: vs, var_ventas: vs ? vo / vs - 1 : null, pedidos_oct: po, var_pedidos: ps ? po / ps - 1 : null,
+      inv_meta: im, inv_google: ig, inversion: im + ig, detalle_inv: 'Meta $' + Math.round(im).toLocaleString('en') + ' · Google $' + Math.round(ig).toLocaleString('en'),
+      roas_plat: im + ig ? val / (im + ig) : null, mer: im + ig ? vo / (im + ig) : null,
+      criticas: alertas.filter(r => r.cliente === c && r.severidad === 'Crítica').length };
+  })
+});
+dash.calc('total', {
+  title: 'Totales de las 4 marcas',
+  description: 'Ventas, variación, inversión, alertas críticas y acciones propuestas de las 4 marcas juntas.',
+  inputs: ['kpi', 'acciones'],
+  fn: (kpi, acciones) => {
+    const s = f => kpi.reduce((x, r) => x + (Number(r[f]) || 0), 0);
+    return [{ ventas_oct: s('ventas_oct'), var_ventas: s('ventas_sep') ? s('ventas_oct') / s('ventas_sep') - 1 : null, inversion: s('inversion'), criticas: s('criticas'), propuestas: acciones.filter(a => a.estado === 'Propuesta').length }];
+  }
+});
+dash.calc('tienda_var', {
+  title: 'Variación por canal de venta',
+  description: 'Cambio de ventas de 1–27 oct frente a 1–27 sep por canal.',
+  inputs: ['tienda'],
+  fn: (tienda) => tienda.map(r => ({ cliente: r.cliente, canal_venta: r.canal_venta, variacion: Number(r.ventas_sep) ? Number(r.ventas_oct) / Number(r.ventas_sep) - 1 : null }))
+});
+
+(function () {
+  const $ = s => document.querySelector(s);
+  const money = v => v == null || isNaN(v) ? '—' : '$' + d3.format(',.0f')(v);
+  const money2 = v => v == null || isNaN(v) ? '—' : '$' + d3.format(',.2f')(v);
+  const pct = v => v == null || isNaN(v) ? '—' : d3.format('.1%')(v);
+  const sgn = v => v == null || isNaN(v) ? '—' : (v > 0 ? '+' : '') + d3.format('.0%')(v);
+  const x2 = v => v == null || isNaN(v) ? '—' : d3.format('.2f')(v) + 'x';
+  const int = v => v == null || isNaN(v) ? '—' : d3.format(',.0f')(v);
+  const keyOf = (...p) => p.map(encodeURIComponent).join(',');
+  const tabs = { 'resumen': 'resumen', 'brooklyn': 'Brooklyn Biltong', 'begbarker': 'Beg & Barker', 'ayoba': 'Ayoba', 'granite': 'Granite', 'acciones': 'acciones', 'verificacion': 'verificacion' };
+  let tab = 'resumen';
+  const fromHash = location.hash.slice(1).replace('tab-', '');
+  if (tabs[fromHash]) tab = tabs[fromHash];
+
+  function setTab(t) {
+    tab = t;
+    document.querySelectorAll('.sb-tab').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t ? 'true' : 'false'));
+    $('#pane-resumen').hidden = t !== 'resumen';
+    $('#pane-acciones').hidden = t !== 'acciones';
+    $('#pane-verificacion').hidden = t !== 'verificacion';
+    $('#pane-cliente').hidden = ['resumen', 'acciones', 'verificacion'].includes(t);
+    const btn = [...document.querySelectorAll('.sb-tab')].find(b => b.dataset.tab === t);
+    if (btn) dash.setLink(btn.id);
+    draw();
+  }
+  document.querySelectorAll('.sb-tab').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+  ['#f-cliente', '#f-estado', '#f-q'].forEach(s => $(s).addEventListener('input', draw));
+
+  const cls = (el, v, good) => { el.classList.remove('sb-good', 'sb-bad'); if (v != null && !isNaN(v) && v !== 0) el.classList.add((v > 0) === good ? 'sb-good' : 'sb-bad'); };
+  const pill = (txt, kind) => { const s = document.createElement('span'); s.className = 'sb-pill ' + (kind || ''); s.textContent = txt; return s; };
+  const estadoKind = e => /Cuadra|Activa|Hecha|Verificada|Ejecutada$/.test(e) ? 'ok' : /Revisar|Pendiente|sin aprobación|Bloqueada|Pausada|Sin/.test(e) ? (/Revisar|sin aprobación|Bloqueada/.test(e) ? 'bad' : 'warn') : '';
+
+  function failed(el, d) { el.innerHTML = ''; const f = document.createElement('div'); f.className = 'sb-fail'; f.textContent = 'Failed to load'; el.appendChild(f); }
+
+  function fillMarks(scope, ds, row) {
+    scope.querySelectorAll(`[data-source="${ds}"][data-field]`).forEach(el => {
+      el.classList.remove('dash-skeleton');
+      const f = el.dataset.field, v = row ? row[f] : null;
+      if (!row) { el.textContent = '—'; return; }
+      if (['ventas_oct', 'inversion', 'inv_meta', 'inv_google'].includes(f)) el.textContent = money(v);
+      else if (['var_ventas', 'var_pedidos'].includes(f)) { el.textContent = sgn(v) + (el.closest('.sb-tile') ? ' vs 1–27 sep' : ''); cls(el, v, true); }
+      else if (['roas_plat', 'mer'].includes(f)) el.textContent = x2(v);
+      else if (['pedidos_oct', 'criticas', 'propuestas'].includes(f)) el.textContent = int(v);
+      else el.textContent = v == null ? '—' : String(v);
+    });
+  }
+
+  function fillTable(tableSel, rows, cols, keyFn) {
+    const tb = document.querySelector(tableSel + ' tbody'); tb.innerHTML = '';
+    rows.forEach(r => {
+      const tr = document.createElement('tr'); tr.dataset.key = keyFn(r);
+      cols.forEach(([f, fmt, cl]) => {
+        const td = document.createElement('td'); if (cl) td.className = cl;
+        const out = fmt ? fmt(r[f], r) : (r[f] == null || r[f] === '' ? '—' : String(r[f]));
+        if (out instanceof Node) td.appendChild(out); else td.textContent = out;
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+  }
+
+  function drawChart(kpi) {
+    const box = $('#c-ventas'); box.innerHTML = '';
+    const W = Math.max(280, box.clientWidth), H = 240, m = { t: 12, r: 12, b: 28, l: 56 };
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const x0 = d3.scaleBand(kpi.map(r => r.cliente), [m.l, W - m.r]).padding(.25);
+    const x1 = d3.scaleBand(['ventas_sep', 'ventas_oct'], [0, x0.bandwidth()]).padding(.12);
+    const y = d3.scaleLinear([0, d3.max(kpi, r => Math.max(r.ventas_oct, r.ventas_sep)) * 1.08], [H - m.b, m.t]).nice();
+    svg.append('g').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', 'var(--cds-chart-grid)');
+    svg.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', m.l - 6).attr('y', d => y(d)).attr('dy', '.32em').attr('text-anchor', 'end').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(d => '$' + d3.format('~s')(d));
+    svg.append('g').selectAll('text').data(kpi).join('text').attr('x', d => x0(d.cliente) + x0.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(d => d.cliente);
+    const tip = d3.select(box).append('div').attr('class', 'sb-tip').style('display', 'none');
+    const col = { ventas_sep: 'var(--cds-chart-muted)', ventas_oct: dash.colors[0] };
+    const nm = { ventas_sep: '1–27 sep', ventas_oct: '1–27 oct' };
+    kpi.forEach(r => ['ventas_sep', 'ventas_oct'].forEach(k => {
+      svg.append('rect').attr('x', x0(r.cliente) + x1(k)).attr('width', Math.min(32, x1.bandwidth())).attr('y', y(r[k])).attr('height', y(0) - y(r[k])).attr('rx', 4).attr('fill', col[k])
+        .on('mousemove', ev => { const [px, py] = d3.pointer(ev, box); tip.style('display', null).style('left', Math.min(px + 10, box.clientWidth - 150) + 'px').style('top', (py - 30) + 'px').html(''); tip.append('div').attr('class', 't').text(r.cliente); tip.append('div').text(nm[k] + ': ' + money(r[k])); })
+        .on('mouseleave', () => tip.style('display', 'none'));
+    }));
+    const lg = svg.append('g').attr('transform', `translate(${m.l},${m.t})`);
+    [['ventas_sep', '1–27 sep'], ['ventas_oct', '1–27 oct']].forEach(([k, t], i) => { lg.append('rect').attr('x', i * 90).attr('y', -2).attr('width', 10).attr('height', 10).attr('rx', 2).attr('fill', col[k]); lg.append('text').attr('x', i * 90 + 14).attr('y', 7).attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(t); });
+  }
+
+  function alertList(sel, rows) {
+    const ul = $(sel); ul.innerHTML = '';
+    const ord = { 'Crítica': 0, 'Alta': 1, 'Media': 2 };
+    rows.slice().sort((a, b) => ord[a.severidad] - ord[b.severidad]).forEach(r => {
+      const li = document.createElement('li');
+      li.appendChild(pill(r.severidad, r.severidad === 'Crítica' ? 'bad' : r.severidad === 'Alta' ? 'warn' : ''));
+      const sp = document.createElement('span'); sp.textContent = (tab === 'resumen' ? r.cliente + ': ' : '') + r.alerta; li.appendChild(sp);
+      ul.appendChild(li);
+    });
+  }
+
+
+  let zoom = 'Fast Sale';
+  document.querySelectorAll('.sb-chip').forEach(b => b.addEventListener('click', () => { zoom = b.dataset.zoom; draw(); }));
+  function drawZoom(D) {
+    const ZB = { 'Brooklyn Biltong': 'Fast Sale', 'Beg & Barker': 'Fall Sale B&B', 'Ayoba': 'Flash Sale Ayoba' };
+    const zc = $('#zoom'); zc.hidden = !(tab in ZB);
+    if (zc.hidden) return;
+    const mine = [...document.querySelectorAll('.sb-chip')].filter(b => b.dataset.brand === tab).map(b => b.dataset.zoom);
+    if (!mine.includes(zoom)) zoom = ZB[tab];
+    document.querySelectorAll('.sb-chip').forEach(b => { b.hidden = b.dataset.brand !== tab; b.setAttribute('aria-pressed', b.dataset.zoom === zoom ? 'true' : 'false'); });
+    zc.querySelectorAll('[data-z]').forEach(el => el.hidden = el.dataset.z !== zoom);
+    const fmt = (v, f) => f === 'money' ? money(v) : f === 'money2' ? money2(v) : f === 'x' ? x2(v) : f === 'pct' ? pct(v) : f === 'int' ? int(v) : f === 'num' ? d3.format(',.1f')(v) : String(v);
+    const zk = D('zoom_kpi'), tiles = $('#zoom-tiles'); tiles.innerHTML = '';
+    if (zk.status === 'ok') zk.data.filter(r => r.zoom === zoom).forEach(r => {
+      const c = document.createElement('div'); c.className = 'sb-card sb-tile';
+      const l = document.createElement('span'); l.className = 'sb-lab'; l.textContent = r.etiqueta; c.appendChild(l);
+      const b = document.createElement('span'); b.className = 'sb-big'; b.dataset.source = 'zoom_kpi'; b.dataset.field = 'valor'; b.dataset.where = 'id=' + encodeURIComponent(r.id); b.textContent = fmt(r.valor, r.formato); c.appendChild(b);
+      const n = document.createElement('span'); n.className = 'sb-delta sb-note'; n.textContent = r.nota; c.appendChild(n);
+      tiles.appendChild(c);
+    }); else if (zk.status === 'error') failed(tiles);
+    const zh = D('zoom_hallazgos'), ul = $('#zoom-find'); ul.innerHTML = '';
+    if (zh.status === 'ok') zh.data.filter(r => r.zoom === zoom).forEach(r => {
+      const li = document.createElement('li');
+      li.appendChild(pill(r.tipo, r.tipo === 'Positivo' || r.tipo === 'Verificado' ? 'ok' : r.tipo === 'Problema' ? 'bad' : r.tipo === 'Falta dato' ? 'warn' : ''));
+      const sp = document.createElement('span'); sp.dataset.source = 'zoom_hallazgos'; sp.dataset.field = 'texto'; sp.dataset.where = 'id=' + encodeURIComponent(r.id); sp.textContent = r.texto; li.appendChild(sp);
+      ul.appendChild(li);
+    }); else if (zh.status === 'error') failed(ul);
+    const roasCell = v => { const s = document.createElement('span'); s.textContent = x2(v); if (v != null && v > 0) s.className = v >= 2 ? 'sb-good' : v < 1 ? 'sb-bad' : ''; return s; };
+    if (zoom === 'Fast Sale') {
+      const bd = D('bk_diario');
+      if (bd.status === 'ok') drawDaily(bd.data, { sel: '#c-fs', name: 'Fast Sale', baseUntil: '2026-10-15', baseLabel: 'Promedio 1–14 oct ' }); else if (bd.status === 'error') failed($('#c-fs'));
+      const fc = D('fs_canales');
+      if (fc.status === 'ok') fillTable('#t-fs-canales', fc.data, [['linea', null, 'w'], ['medio'], ['inversion', money2, 'n'], ['alcance', int, 'n'], ['pedidos', int, 'n'], ['ventas', money, 'n'], ['eficiencia', (v, r) => r.nota === 'ROAS' ? x2(v) : money2(v), 'n'], ['nota']], r => r.id);
+      else if (fc.status === 'error') failed($('#t-fs-canales tbody'));
+      const fu = D('fs_ubicaciones');
+      if (fu.status === 'ok') fillTable('#t-fs-ubic', fu.data, [['plataforma'], ['ubicacion'], ['inversion', money2, 'n'], ['impresiones', int, 'n'], ['clics', int, 'n'], ['ctr', v => { const s = document.createElement('span'); s.textContent = pct(v); if (v != null && v < 0.005) s.className = 'sb-bad'; return s; }, 'n'], ['cpc', money2, 'n'], ['carritos', int, 'n'], ['compras', int, 'n'], ['roas', roasCell, 'n']], r => r.id);
+      else if (fu.status === 'error') failed($('#t-fs-ubic tbody'));
+    }
+    if (zoom === 'Fall Sale B&B' || zoom === 'Flash Sale Ayoba') {
+      const brand = zoom === 'Fall Sale B&B' ? 'Beg & Barker' : 'Ayoba', sel = zoom === 'Fall Sale B&B' ? 'b' : 'a';
+      const pd = D('promo_diario');
+      if (pd.status === 'ok') drawDaily(pd.data.filter(r => r.marca === brand), { sel: '#c-p' + sel, name: zoom === 'Fall Sale B&B' ? 'Fall Sale' : 'Flash Sale', baseUntil: '2026-10-21', baseLabel: 'Promedio 1–20 oct ' });
+      else if (pd.status === 'error') failed($('#c-p' + sel));
+      const pl = D('promo_lineas');
+      if (pl.status === 'ok') fillTable('#t-p' + sel, pl.data.filter(r => r.zoom === zoom), [['linea', null, 'w'], ['medio'], ['inversion', v => v == null ? '—' : money2(v), 'n'], ['alcance', v => v == null ? '—' : int(v), 'n'], ['pedidos', v => v == null ? '—' : int(v), 'n'], ['ventas', v => v == null ? '—' : money(v), 'n'], ['eficiencia', (v, r) => v == null ? '—' : /ROAS/.test(r.nota) ? x2(v) : money2(v), 'n'], ['nota']], r => r.id);
+      else if (pl.status === 'error') failed($('#t-p' + sel + ' tbody'));
+    }
+    if (zoom === 'Smile') {
+      const sm = D('smile_semanal');
+      if (sm.status === 'ok') fillTable('#t-smile', sm.data, [['semana', v => d3.utcFormat('%-d %b')(new Date(v))], ['pedidos_miembros', int, 'n'], ['pedidos_totales', int, 'n'], ['canjes', int, 'n'], ['pauta_meta', v => v ? money2(v) : '—', 'n']], r => r.semana);
+      else if (sm.status === 'error') failed($('#t-smile tbody'));
+    }
+    if (zoom === 'Nuevos clientes') {
+      const nc = D('nc_anuncios');
+      if (nc.status === 'ok') fillTable('#t-nc', nc.data, [['anuncio', null, 'w'], ['estado', v => pill(v, v === 'Activo' ? 'ok' : 'warn')], ['inversion', money2, 'n'], ['clics', int, 'n'], ['ctr', pct, 'n'], ['visitas', int, 'n'], ['carritos', int, 'n'], ['compras', int, 'n'], ['roas', roasCell, 'n']], r => r.id);
+      else if (nc.status === 'error') failed($('#t-nc tbody'));
+    }
+    if (zoom === 'UTMs Meta') {
+      const uc = D('utm_campanas');
+      if (uc.status === 'ok') fillTable('#t-utm-camp', uc.data, [['campana', null, 'w'], ['error', null, 'w'], ['compras_meta', int, 'n'], ['pedidos_con_huella', int, 'n'], ['ventas_con_huella', money2, 'n'], ['accion', null, 'w']], r => r.id);
+      else if (uc.status === 'error') failed($('#t-utm-camp tbody'));
+      const up = D('utm_pedidos');
+      if (up.status === 'ok') fillTable('#t-utm-ped', up.data.slice().sort((a, b) => a.fecha < b.fecha ? -1 : 1), [['fecha', v => d3.utcFormat('%-d oct')(new Date(v))], ['campana'], ['anuncio'], ['valor', money2, 'n'], ['problema', v => pill(v, /genéricos/.test(v) ? 'warn' : 'bad')], ['url', v => { const s = document.createElement('span'); s.className = 'sb-url'; s.textContent = v; return s; }, 'w']], r => r.id);
+      else if (up.status === 'error') failed($('#t-utm-ped tbody'));
+    }
+    if (zoom === 'Remarketing') {
+      const fu = D('funnel');
+      if (fu.status === 'ok') fillTable('#t-rmkt', fu.data.filter(r => r.cliente === 'Brooklyn Biltong' && /RMKT|Clientes/.test(r.conjunto)), [['conjunto', null, 'w'], ['inversion', money2, 'n'], ['alcance', int, 'n'], ['frecuencia', v => { const s = document.createElement('span'); s.textContent = d3.format('.1f')(v); if (v > 4) s.className = 'sb-bad'; return s; }, 'n'], ['visitas', int, 'n'], ['carritos', int, 'n'], ['compras', int, 'n'], ['cpa', money2, 'n'], ['roas', roasCell, 'n']], r => r.id);
+      else if (fu.status === 'error') failed($('#t-rmkt tbody'));
+    }
+    if (zoom === 'Google') {
+      const cp = D('campanas');
+      if (cp.status === 'ok') fillTable('#t-zg', cp.data.filter(r => r.cliente === 'Brooklyn Biltong' && r.canal === 'Google').sort((a, b) => b.inversion - a.inversion), [['campana', null, 'w'], ['inversion', money2, 'n'], ['clics', int, 'n'], ['cpc', money2, 'n'], ['conversiones', v => d3.format(',.1~f')(v), 'n'], ['cpa', money2, 'n'], ['valor', money, 'n'], ['roas', roasCell, 'n']], r => r.id);
+      else if (cp.status === 'error') failed($('#t-zg tbody'));
+    }
+    if (zoom === 'Email y SMS') {
+      const em = D('email');
+      if (em.status === 'ok') fillTable('#t-ze', em.data.filter(r => r.cliente === 'Brooklyn Biltong' && r.destinatarios >= 40).sort((a, b) => (b.ingreso_destinatario || 0) - (a.ingreso_destinatario || 0)), [['nombre', (v, r) => v + (r.canal === 'sms' ? ' (SMS)' : ''), 'w'], ['destinatarios', int, 'n'], ['clic', pct, 'n'], ['pedidos', int, 'n'], ['ventas', money, 'n'], ['ingreso_destinatario', money2, 'n']], r => r.id);
+      else if (em.status === 'error') failed($('#t-ze tbody'));
+    }
+  }
+
+  function drawDaily(rows, o) {
+    const box = $(o.sel); box.innerHTML = '';
+    const W = Math.max(280, box.clientWidth), H = 220, m = { t: 12, r: 8, b: 24, l: 52 };
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const x = d3.scaleBand(rows.map(r => r.dia), [m.l, W - m.r]).padding(.2);
+    const y = d3.scaleLinear([0, d3.max(rows, r => r.ventas) * 1.1], [H - m.b, m.t]).nice();
+    svg.append('g').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', 'var(--cds-chart-grid)');
+    svg.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', m.l - 6).attr('y', d => y(d)).attr('dy', '.32em').attr('text-anchor', 'end').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(d => '$' + d3.format('~s')(d));
+    const step = W < 520 ? 4 : 2;
+    svg.append('g').selectAll('text').data(rows.filter((r, i) => i % step === 0)).join('text').attr('x', d => x(d.dia) + x.bandwidth() / 2).attr('y', H - 6).attr('text-anchor', 'middle').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(d => d3.utcFormat('%-d oct')(new Date(d.dia)));
+    const tip = d3.select(box).append('div').attr('class', 'sb-tip').style('display', 'none');
+    svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', d => x(d.dia)).attr('width', x.bandwidth()).attr('y', d => y(d.ventas)).attr('height', d => y(0) - y(d.ventas)).attr('rx', 4)
+      .attr('fill', d => d.promo ? dash.colors[0] : 'var(--cds-chart-muted)')
+      .on('mousemove', (ev, d) => { const [px, py] = d3.pointer(ev, box); tip.style('display', null).style('left', Math.min(px + 10, box.clientWidth - 160) + 'px').style('top', Math.max(0, py - 40) + 'px').html(''); tip.append('div').attr('class', 't').text(d3.utcFormat('%-d de oct')(new Date(d.dia)) + (d.promo ? ' · ' + o.name : '')); tip.append('div').text(money(d.ventas) + ' · ' + d.pedidos + ' pedidos'); })
+      .on('mouseleave', () => tip.style('display', 'none'));
+    const avg = d3.mean(rows.filter(r => !r.promo && r.dia < o.baseUntil), r => r.ventas);
+    svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(avg)).attr('y2', y(avg)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 4');
+    svg.append('text').attr('x', m.l + 4).attr('y', y(avg) - 4).attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(o.baseLabel + money(avg));
+  }
+
+  function draw() {
+    const D = id => dash.data(id);
+    const tot = D('total'), kpi = D('kpi');
+    if (tot.status === 'ok') fillMarks($('#takeaway'), 'total', tot.data[0]);
+    else if (tot.status === 'error') $('#takeaway').querySelectorAll('[data-source]').forEach(e => { e.classList.remove('dash-skeleton'); e.textContent = '—'; });
+
+    const al = D('alertas'), cp = D('campanas'), ac = D('acciones');
+    if (tab === 'resumen') {
+      if (kpi.status === 'ok') {
+        fillTable('#t-resumen', kpi.data, [['cliente'], ['ventas_oct', money, 'n'], ['ventas_sep', money, 'n'], ['var_ventas', v => { const s = document.createElement('span'); s.textContent = sgn(v); cls(s, v, true); return s; }, 'n'], ['pedidos_oct', int, 'n'], ['inv_meta', money, 'n'], ['inv_google', money, 'n'], ['roas_plat', x2, 'n'], ['mer', x2, 'n'], ['criticas', int, 'n']], r => keyOf(r.cliente));
+        drawChart(kpi.data);
+      } else if (kpi.status === 'error') { failed($('#c-ventas')); }
+      if (al.status === 'ok') alertList('#l-alertas-all', al.data); else if (al.status === 'error') failed($('#l-alertas-all'));
+    }
+
+    if (['Brooklyn Biltong', 'Beg & Barker', 'Ayoba', 'Granite'].includes(tab)) {
+      const c = tab, w = 'cliente=' + encodeURIComponent(c);
+      document.querySelectorAll('#tiles [data-source="kpi"]').forEach(el => el.dataset.where = w);
+      if (kpi.status === 'ok') fillMarks($('#tiles'), 'kpi', kpi.data.find(r => r.cliente === c));
+      const sm = D('semaforo'), box = $('#semaforo'); box.innerHTML = '';
+      if (sm.status === 'ok') sm.data.filter(r => r.cliente === c).forEach(r => {
+        const card = document.createElement('div'); card.className = 'sb-card ' + r.semaforo.toLowerCase();
+        const h = document.createElement('h3'); h.textContent = r.semaforo + ' de hacer'; card.appendChild(h);
+        const p = document.createElement('p'); p.className = 'sb-note'; p.style.fontSize = 'var(--cds-font-size-body)'; p.style.color = 'var(--color-fg)';
+        p.dataset.source = 'semaforo'; p.dataset.field = 'detalle'; p.dataset.where = 'id=' + encodeURIComponent(r.id); p.textContent = r.detalle; card.appendChild(p);
+        box.appendChild(card);
+      }); else if (sm.status === 'error') failed(box);
+      if (al.status === 'ok') alertList('#l-alertas', al.data.filter(r => r.cliente === c)); else if (al.status === 'error') failed($('#l-alertas'));
+      if (cp.status === 'ok') {
+        const rows = cp.data.filter(r => r.cliente === c).sort((a, b) => (a.canal > b.canal ? 1 : a.canal < b.canal ? -1 : b.inversion - a.inversion));
+        const mx = d3.max(rows, r => r.inversion) || 1;
+        fillTable('#t-campanas', rows, [['canal'], ['campana', null, 'w'], ['estado', v => pill(v, /^Activa|^Gastó/.test(v) ? 'ok' : /Pausada|Sin gasto/.test(v) ? '' : 'warn')],
+          ['inversion', v => { const f = document.createDocumentFragment(); const b = document.createElement('span'); b.className = 'sb-bar'; b.style.width = Math.max(2, 48 * v / mx) + 'px'; f.appendChild(b); f.appendChild(document.createTextNode(money2(v))); return f; }, 'n'],
+          ['impresiones', int, 'n'], ['clics', int, 'n'], ['ctr', pct, 'n'], ['cpc', money2, 'n'], ['conversiones', v => v == null ? '—' : d3.format(',.1~f')(v), 'n'], ['cpa', money2, 'n'], ['valor', money, 'n'],
+          ['roas', v => { const s = document.createElement('span'); s.textContent = x2(v); if (v != null && v > 0) s.className = v >= 2 ? 'sb-good' : v < 1 ? 'sb-bad' : ''; return s; }, 'n'],
+          ['verificacion', v => pill(v, estadoKind(v))]], r => r.id);
+      } else if (cp.status === 'error') failed($('#t-campanas tbody'));
+      const fu = D('funnel');
+      if (fu.status === 'ok') {
+        const rows = fu.data.filter(r => r.cliente === c);
+        $('#funnel-empty').hidden = rows.length > 0;
+        fillTable('#t-funnel', rows, [['conjunto', null, 'w'], ['inversion', money2, 'n'], ['alcance', int, 'n'], ['frecuencia', v => { const s = document.createElement('span'); s.textContent = d3.format('.1f')(v); if (v > 4) s.className = 'sb-bad'; return s; }, 'n'], ['clics', int, 'n'], ['visitas', int, 'n'], ['carritos', int, 'n'], ['checkouts', int, 'n'], ['compras', int, 'n'], ['cpa', money2, 'n'], ['roas', x2, 'n']], r => r.id);
+      } else if (fu.status === 'error') failed($('#t-funnel tbody'));
+      const ti = D('tienda'), tv = D('tienda_var');
+      if (ti.status === 'ok' && tv.status === 'ok') {
+        const rows = ti.data.filter(r => r.cliente === c).sort((a, b) => b.ventas_oct - a.ventas_oct);
+        fillTable('#t-tienda', rows, [['canal_venta'], ['ventas_oct', money, 'n'], ['pedidos_oct', int, 'n'], ['ventas_sep', money, 'n'], ['canal_venta', (v, r) => { const x = tv.data.find(q => q.cliente === r.cliente && q.canal_venta === r.canal_venta); const s = document.createElement('span'); s.textContent = sgn(x && x.variacion); cls(s, x && x.variacion, true); return s; }, 'n']], r => keyOf(r.cliente, r.canal_venta));
+      } else if (ti.status === 'error') failed($('#t-tienda tbody'));
+      const em = D('email');
+      if (em.status === 'ok') {
+        const rows = em.data.filter(r => r.cliente === c).sort((a, b) => b.ventas - a.ventas);
+        fillTable('#t-email', rows, [['nombre', null, 'w'], ['tipo', (v, r) => v + (r.canal === 'sms' ? ' SMS' : '')], ['destinatarios', int, 'n'], ['clic', pct, 'n'], ['pedidos', int, 'n'], ['ventas', money, 'n'], ['ingreso_destinatario', money2, 'n']], r => r.id);
+      } else if (em.status === 'error') failed($('#t-email tbody'));
+      if (ac.status === 'ok') {
+        const ord = e => ({ 'Propuesta': 0, 'Ejecutada sin aprobación': 1, 'Pendiente': 2, 'Bloqueada': 3, 'En curso': 4, 'Hecha': 5 }[e] ?? 6);
+        const rows = ac.data.filter(r => r.cliente === c).sort((a, b) => ord(a.estado) - ord(b.estado));
+        fillTable('#t-acc-cliente', rows, [['id'], ['bloque'], ['accion', null, 'w'], ['responsable'], ['fecha_limite'], ['estado', v => pill(v, estadoKind(v))]], r => r.id);
+      } else if (ac.status === 'error') failed($('#t-acc-cliente tbody'));
+    }
+
+    drawZoom(D);
+
+    if (tab === 'acciones' && ac.status === 'ok') {
+      const sel = $('#f-estado');
+      if (sel.options.length === 1) [...new Set(ac.data.map(r => r.estado))].sort().forEach(e => { const o = document.createElement('option'); o.textContent = e; sel.appendChild(o); });
+      const fc = $('#f-cliente').value, fe = sel.value, q = $('#f-q').value.trim().toLowerCase();
+      const ord = e => ({ 'Propuesta': 0, 'Ejecutada sin aprobación': 1, 'Pendiente': 2, 'Bloqueada': 3, 'En curso': 4, 'Hecha': 5 }[e] ?? 6);
+      const rows = ac.data.filter(r => (!fc || r.cliente === fc) && (!fe || r.estado === fe) && (!q || (r.accion + ' ' + r.responsable + ' ' + r.motivo).toLowerCase().includes(q))).sort((a, b) => ord(a.estado) - ord(b.estado));
+      fillTable('#t-acciones', rows, [['id'], ['cliente'], ['origen'], ['bloque'], ['accion', null, 'w'], ['motivo', null, 'w'], ['responsable'], ['fecha_limite'], ['estado', v => pill(v, estadoKind(v))], ['verificado']], r => r.id);
+    } else if (tab === 'acciones' && ac.status === 'error') failed($('#t-acciones tbody'));
+
+    if (tab === 'verificacion') {
+      const ve = D('verificacion'), fr = D('frescura');
+      if (ve.status === 'ok') fillTable('#t-verif', ve.data, [['cliente'], ['chequeo', null, 'w'], ['resultado', v => pill(v, estadoKind(v))], ['detalle', null, 'w']], r => r.id);
+      else if (ve.status === 'error') failed($('#t-verif tbody'));
+      if (fr.status === 'ok') fillTable('#t-frescura', fr.data, [['cliente'], ['google_hasta'], ['meta_hasta'], ['tienda_hasta'], ['ultima_actualizacion_hoja']], r => keyOf(r.cliente));
+      else if (fr.status === 'error') failed($('#t-frescura tbody'));
+    }
+  }
+
+  setTab(tab);
+  dash.onData(draw);
+})();
+</script>
